@@ -7,7 +7,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <style>
-        /* ЯДЕРНЫЙ СБРОС ОТСТУПОВ */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         body { font-family: sans-serif; background: #f0f2f5; color: #333; overflow-x: hidden; -webkit-overflow-scrolling: touch; width: 100%; }
@@ -21,36 +20,43 @@
         .btn-main { width: 100%; padding: 12px; background: #0088cc; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; display: block; margin-bottom: 5px; }
         .btn-main:disabled { background: #99ccdd; }
         
-        /* БРОНЕБОЙНАЯ ЛОГИКА КНОПОК ДЛЯ TELEGRAM WEB APP */
+        /* ЖЕЛЕЗОБЕТОННАЯ ВЕРСТКА КНОПОК ДЛЯ TELEGRAM (inline-block) */
         #preset-buttons, .group-bar {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between; /* Равномерно распределяет кнопки */
+            display: block;
             width: 100%;
+            font-size: 0; /* Убираем пробелы между inline-block элементами */
+            margin-bottom: 5px;
         }
+        .group-bar { margin-top: 10px; }
         
         .btn-sub {
-            width: 32%; /* Жесткая ширина: ровно 3 кнопки в ряд */
-            margin-bottom: 5px; /* Отступ снизу */
+            display: inline-block;
+            vertical-align: top;
+            width: 32%;
+            margin-right: 2%;
+            margin-bottom: 6px;
             padding: 8px 2px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             text-align: center;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
+            line-height: 1.3;
             box-sizing: border-box;
-            line-height: 1.5;
+            min-height: 36px;
+            overflow: hidden;
+            word-break: break-word;
         }
         
-        #preset-buttons { margin-bottom: 5px; }
+        /* Каждый 3-й элемент не имеет отступа справа, чтобы идеально встать в ряд */
+        .btn-sub:nth-child(3n) {
+            margin-right: 0;
+        }
+        
         #preset-buttons .btn-sub { background: #f1f3f5; color: #495057; }
         #preset-buttons .btn-sub.active { background: #e6007a; color: white; }
         
-        .group-bar { margin-top: 10px; }
         .group-bar .btn-sub { background: #e7f5ff; color: #1971c2; }
         .group-bar .btn-sub.active { background: #0088cc; color: white; }
 
@@ -101,7 +107,7 @@
             border: none;
         }
 
-        /* ГОРЗИНТАЛЬНЫЙ РЕЖИМ С УМЕНЬШЕННЫМ ГРАФИКОМ */
+        /* ГОРЗИНТАЛЬНЫЙ РЕЖИМ */
         #app-wrapper.landscape {
             position: absolute;
             top: 0;
@@ -119,7 +125,7 @@
         }
 
         #app-wrapper.landscape .chart-container {
-            height: 180px !important; /* Жестко уменьшаем график в горизонтали */
+            height: 180px !important; 
             margin-bottom: 20px;
         }
 
@@ -158,7 +164,7 @@
             <div class="period-label" id="periodLabel"></div>
             <div class="progress-label" id="progressLabel"></div>
             <button class="btn-main" style="background:#e6007a;" onclick="fetchData()">Рассчитать</button>
-            <div class="version-tag">v2.0 (Bulletproof CSS)</div>
+            <div class="version-tag">v2.1 (Bulletproof Buttons)</div>
         </div>
 
         <div class="card hidden" id="stakingCard">
