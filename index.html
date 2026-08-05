@@ -35,23 +35,57 @@
         .active { background: #28a745; }
         .waiting { background: #ffc107; color: #333; }
         .toggle-btn { background: #e9ecef; color: #555; border: none; padding: 5px 10px; border-radius: 5px; font-size: 0.8em; cursor: pointer; font-weight: bold; }
-        .rotate-btn { display: none; background: #6c757d; }
+        
+        /* Плавающая кнопка поворота экрана */
+        .rotate-btn {
+            display: none;
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            width: 45px;
+            height: 45px;
+            background: rgba(108, 117, 125, 0.9);
+            color: white;
+            border-radius: 50%;
+            z-index: 9999;
+            font-size: 20px;
+            padding: 0;
+            text-align: center;
+            line-height: 45px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            cursor: pointer;
+            border: none;
+        }
+
+        /* Адаптация под мобильные устройства */
         @media (max-width: 768px) {
             .rotate-btn { display: block; }
             h3 { font-size: 1em; flex-direction: column; align-items: flex-start; gap: 5px; }
             .chart-container { height: 300px; }
+            .btn-sub { flex: 1 1 45%; text-align: center; padding: 8px 5px; } /* Кнопки по 2 в ряд */
+            .row { flex-direction: column; gap: 5px; } /* Календарь в столбик */
         }
+
+        /* Горизонтальный режим с правильной прокруткой */
         body.force-landscape {
-            width: 100vh; height: 100vw;
-            transform: rotate(90deg) translateY(-100vh);
-            transform-origin: top left; position: fixed; top: 0; left: 0;
-            overflow-y: auto; overflow-x: hidden; padding: 20px; box-sizing: border-box;
+            transform: rotate(90deg);
+            transform-origin: bottom left;
+            width: 100vh;
+            height: 100vw;
+            position: fixed;
+            top: -100vw;
+            left: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch; /* Плавная прокрутка на iOS */
+            padding: 20px;
+            box-sizing: border-box;
         }
     </style>
 </head>
 <body>
 
-    <button class="btn-main rotate-btn" id="rotateBtn" onclick="toggleOrientation()" style="margin-bottom: 15px;">Повернуть горизонтально</button>
+    <button class="rotate-btn" id="rotateBtn" onclick="toggleOrientation()">🔄</button>
 
     <div class="card">
         <h3>Адрес Polkadot</h3>
@@ -66,7 +100,7 @@
             <div class="col"><label>С</label><input type="date" id="startDate" onchange="onDateChange()"></div>
             <div class="col"><label>По</label><input type="date" id="endDate" onchange="onDateChange()"></div>
         </div>
-        <div style="margin-bottom:10px;">
+        <div style="display: flex; flex-wrap: wrap; margin-bottom:10px;">
             <button class="btn-sub" onclick="setPreset(7, this)">7 дней</button>
             <button class="btn-sub active" onclick="setPreset(30, this)">30 дней</button>
             <button class="btn-sub" onclick="setPreset(90, this)">90 дней</button>
@@ -108,9 +142,8 @@
     </div>
 
     <script>
-        // Тот самый рабочий ключ и заголовки из вашего Python-скрипта
         const API_KEY = "4d0c8ba32dde4a06bda83d52af49120f";
-        const DOT_DECIMALS = 10; // ВОЗВРАЩЕНА ПРОПУЩЕННАЯ СТРОКА!
+        const DOT_DECIMALS = 10;
         const HEADERS = { 
             'Content-Type': 'application/json', 
             'x-api-key': API_KEY,
@@ -127,7 +160,6 @@
 
         function toggleOrientation() {
             document.body.classList.toggle('force-landscape');
-            document.getElementById('rotateBtn').innerText = document.body.classList.contains('force-landscape') ? "Вернуть вертикально" : "Повернуть горизонтально";
             setTimeout(() => { if (rewardsChart) rewardsChart.resize(); }, 300);
         }
 
@@ -279,14 +311,22 @@
 
         async function fetchValidators(addr) {
             showProgress("Шаг 3: Загрузка валидаторов...");
-            const relayNomRes = await apiFetch("https://polkadot.api.subscan.io/api/scan/staking/nominator", {address: addr});
+            
+            // Добавлены параметры row и page, без них API не возвращает список номинаций
+            const relayNomRes = await apiFetch("https://polkadot.api.subscan.io/api/scan/staking/nominator", {address: addr, row: 100, page: 0});
             await delay(500);
-            const assetNomRes = await apiFetch("https://assethub-polkadot.api.subscan.io/api/scan/staking/nominator", {address: addr});
+            const assetNomRes = await apiFetch("https://assethub-polkadot.api.subscan.io/api/scan/staking/nominator", {address: addr, row: 100, page: 0});
             await delay(500);
             
             let nominations = [];
+            
+            // Ищем в стандартном месте
             if (relayNomRes?.data?.staking_info?.nominations) nominations = nominations.concat(relayNomRes.data.staking_info.nominations);
             if (assetNomRes?.data?.staking_info?.nominations) nominations = nominations.concat(assetNomRes.data.staking_info.nominations);
+            
+            // Ищем в корневом месте (на случай изменения API)
+            if (relayNomRes?.data?.nominations) nominations = nominations.concat(relayNomRes.data.nominations);
+            if (assetNomRes?.data?.nominations) nominations = nominations.concat(assetNomRes.data.nominations);
 
             if (nominations.length > 0 && typeof nominations[0] === 'object') {
                 nominations = nominations.map(n => n.target || n.stash || n.address).filter(Boolean);
@@ -294,8 +334,8 @@
 
             if (nominations.length === 0) {
                 let debugHTML = "<i>Список номинаций пуст.</i><br><br>";
-                debugHTML += `<div class="muted">Relay Response: <br><code style="word-break:break-all;">${JSON.stringify(relayNomRes.data?.staking_info || relayNomRes.message)}</code></div><br>`;
-                debugHTML += `<div class="muted">Asset Hub Response: <br><code style="word-break:break-all;">${JSON.stringify(assetNomRes.data?.staking_info || assetNomRes.message)}</code></div>`;
+                debugHTML += `<div class="muted">Relay Response: <br><code style="word-break:break-all;">${JSON.stringify(relayNomRes.data || relayNomRes.message)}</code></div><br>`;
+                debugHTML += `<div class="muted">Asset Hub Response: <br><code style="word-break:break-all;">${JSON.stringify(assetNomRes.data || assetNomRes.message)}</code></div>`;
                 document.getElementById('validators').innerHTML = debugHTML;
                 return;
             }
@@ -447,14 +487,27 @@
                         {
                             type: 'bar', label: 'Доход (DOT)', data: data,
                             backgroundColor: 'rgba(0, 136, 204, 0.6)', borderColor: '#0088cc',
-                            borderWidth: 1, borderRadius: 4, yAxisID: 'y', order: 2
+                            borderWidth: 1, borderRadius: 4, yAxisID: 'y', order: 2,
+                            datalabels: {
+                                display: true,
+                                align: 'top',
+                                color: '#0088cc',
+                                font: { weight: 'bold', size: 10 },
+                                formatter: (value) => parseFloat(value.toFixed(2)).toString()
+                            }
                         },
                         {
                             type: 'line', label: 'Средний доход в день (DOT)', data: avgData,
                             borderColor: '#e6007a', backgroundColor: '#e6007a',
                             tension: 0.3, fill: false, pointRadius: 5, pointHoverRadius: 7,
                             yAxisID: 'y', order: 1,
-                            datalabels: { display: true, align: 'top', anchor: 'end', color: '#e6007a', font: { weight: 'bold', size: 11 }, formatter: (value) => parseFloat(value.toFixed(2)).toString() }
+                            datalabels: {
+                                display: true,
+                                align: 'bottom',
+                                color: '#e6007a',
+                                font: { weight: 'bold', size: 10 },
+                                formatter: (value) => parseFloat(value.toFixed(2)).toString()
+                            }
                         }
                     ]
                 },
@@ -462,8 +515,7 @@
                     responsive: true, maintainAspectRatio: false, layout: { padding: { top: 30 } },
                     plugins: {
                         legend: { display: true, position: 'top', labels: { boxWidth: 15, font: { size: 11 } } },
-                        tooltip: { enabled: true },
-                        datalabels: { display: function(context) { return context.dataset.type === 'line'; } }
+                        tooltip: { enabled: true }
                     },
                     scales: { 
                         y: { beginAtZero: true, ticks: { color: '#666', font: { size: 10 } }, grid: { color: '#eee' } },
