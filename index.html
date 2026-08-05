@@ -15,24 +15,48 @@
         
         .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; overflow: hidden; width: 100%; }
         
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; font-size: 16px; display: block; }
+        /* Базовые стили для всех полей ввода */
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            display: block;
+            box-sizing: border-box;
+            -webkit-appearance: none;
+        }
         
         .btn-main { width: 100%; padding: 12px; background: #0088cc; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; display: block; margin-bottom: 5px; }
         .btn-main:disabled { background: #99ccdd; }
         
-        /* ЖЕЛЕЗОБЕТОННАЯ ВЕРСТКА КНОПОК ДЛЯ TELEGRAM (inline-block) */
-        #preset-buttons, .group-bar {
-            display: block;
+        /* ЖЕЛЕЗОБЕТОННАЯ ВЕРСТКА ПОЛЕЙ ДАТ (Без Flexbox) */
+        .dates-row {
             width: 100%;
-            font-size: 0; /* Убираем пробелы между inline-block элементами */
+            font-size: 0; /* Убираем отступы между inline-block */
+            margin-bottom: 15px;
+        }
+        .date-col {
+            display: inline-block;
+            vertical-align: top;
+            width: 49%; /* Идеально делит экран пополам */
+            box-sizing: border-box;
+        }
+        /* Отступ между двумя полями календаря */
+        .date-col:first-child { margin-right: 2%; }
+        
+        /* ЖЕЛЕЗОБЕТОННАЯ ВЕРСТКА КНОПОК (Без Flexbox) */
+        #preset-buttons, .group-bar {
+            width: 100%;
+            font-size: 0;
             margin-bottom: 5px;
         }
-        .group-bar { margin-top: 10px; }
+        .group-bar { margin-top: 15px; }
         
         .btn-sub {
             display: inline-block;
             vertical-align: top;
-            width: 32%;
+            width: 32%; /* Ровно 3 кнопки в ряд */
             margin-right: 2%;
             margin-bottom: 6px;
             padding: 8px 2px;
@@ -44,12 +68,10 @@
             text-align: center;
             line-height: 1.3;
             box-sizing: border-box;
-            min-height: 36px;
             overflow: hidden;
             word-break: break-word;
         }
-        
-        /* Каждый 3-й элемент не имеет отступа справа, чтобы идеально встать в ряд */
+        /* Убираем правый отступ у каждой 3-й кнопки, чтобы ряд был ровным */
         .btn-sub:nth-child(3n) {
             margin-right: 0;
         }
@@ -60,10 +82,7 @@
         .group-bar .btn-sub { background: #e7f5ff; color: #1971c2; }
         .group-bar .btn-sub.active { background: #0088cc; color: white; }
 
-        h3 { font-size: 1.1em; color: #555; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
-        
-        .row { display: flex; gap: 10px; margin-bottom: 10px; width: 100%; }
-        .col { flex: 1; min-width: 0; box-sizing: border-box; }
+        h3 { font-size: 1.1em; color: #555; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 10px; }
         
         .reward-item { padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95em; }
         .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.8em; color: white; margin-right: 5px; }
@@ -75,7 +94,15 @@
         .income-box { text-align: center; padding: 10px 0; }
         .income-val { font-size: 2em; font-weight: bold; color: #0088cc; }
         
-        .chart-container { height: 280px; width: 100%; margin-top: 15px; margin-bottom: 15px; position: relative; z-index: 1; }
+        .chart-container { 
+            height: 280px; 
+            width: 100%; 
+            margin-top: 15px; 
+            margin-bottom: 25px; /* Жесткий отступ, чтобы не налезать на календарь */
+            position: relative; 
+            z-index: 1;
+            overflow: hidden;
+        }
         
         .error { color: red; font-size: 0.9em; margin-top: 10px; text-align: center; }
         .period-label { text-align: center; font-weight: bold; color: #0088cc; margin: 10px 0; font-size: 1.1em; }
@@ -109,7 +136,7 @@
 
         /* ГОРЗИНТАЛЬНЫЙ РЕЖИМ */
         #app-wrapper.landscape {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100vh; 
@@ -125,8 +152,8 @@
         }
 
         #app-wrapper.landscape .chart-container {
-            height: 180px !important; 
-            margin-bottom: 20px;
+            height: 180px !important;
+            margin-bottom: 30px !important; /* Огромный отступ в горизонтали */
         }
 
         @media (max-width: 768px) {
@@ -149,9 +176,9 @@
 
         <div class="card hidden" id="configCard">
             <h3>📅 Период анализа</h3>
-            <div class="row">
-                <div class="col"><label>С</label><input type="date" id="startDate" onchange="onDateChange()"></div>
-                <div class="col"><label>По</label><input type="date" id="endDate" onchange="onDateChange()"></div>
+            <div class="dates-row">
+                <div class="date-col"><label>С</label><input type="date" id="startDate" onchange="onDateChange()"></div>
+                <div class="date-col"><label>По</label><input type="date" id="endDate" onchange="onDateChange()"></div>
             </div>
             <div id="preset-buttons">
                 <button class="btn-sub" onclick="setPreset(7, this)">7 дней</button>
@@ -164,7 +191,7 @@
             <div class="period-label" id="periodLabel"></div>
             <div class="progress-label" id="progressLabel"></div>
             <button class="btn-main" style="background:#e6007a;" onclick="fetchData()">Рассчитать</button>
-            <div class="version-tag">v2.1 (Bulletproof Buttons)</div>
+            <div class="version-tag">v3.0 (No Flexbox)</div>
         </div>
 
         <div class="card hidden" id="stakingCard">
@@ -189,9 +216,9 @@
             </div>
             <div class="chart-container"><canvas id="rewardsChart"></canvas></div>
             
-            <div class="row" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
-                <div class="col"><label>График с:</label><input type="date" id="chartStartDate" onchange="updateChartRange()"></div>
-                <div class="col"><label>По:</label><input type="date" id="chartEndDate" onchange="updateChartRange()"></div>
+            <div class="dates-row" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
+                <div class="date-col"><label>График с:</label><input type="date" id="chartStartDate" onchange="updateChartRange()"></div>
+                <div class="date-col"><label>По:</label><input type="date" id="chartEndDate" onchange="updateChartRange()"></div>
             </div>
         </div>
 
