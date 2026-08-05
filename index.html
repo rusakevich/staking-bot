@@ -203,7 +203,7 @@
             margin: 0 auto; 
             box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
             overflow: visible;
-            transition: opacity 0.2s ease;
+            transition: opacity 0.1s ease;
         }
         .progress-bar-fill-left { 
             position: absolute; top: 0; left: 0; height: 100%; 
@@ -233,11 +233,11 @@
             z-index: 5;
         }
         .progress-spool-left {
-            left: 0; /* controlled by JS */
+            left: 0; 
             animation: spin-cw 1.2s linear infinite;
         }
         .progress-spool-right {
-            right: 0; /* controlled by JS */
+            right: 0; 
             animation: spin-ccw 1.2s linear infinite;
         }
         @keyframes spin-cw { to { transform: rotate(360deg); } }
@@ -310,7 +310,6 @@
     <button class="rotate-btn" id="rotateBtn" onclick="toggleOrientation()">🔄</button>
 
     <div id="app-wrapper">
-        <!-- Блок адреса получил ID addressCard -->
         <div class="card" id="addressCard">
             <h3>
                 <div class="title-container" onclick="toggleTheme()">
@@ -319,7 +318,6 @@
                 </div>
             </h3>
             <input type="text" id="address" placeholder="Вставьте ваш адрес (Polkadot / Asset Hub)">
-            <!-- Кнопка передает true, так как адрес мог измениться -->
             <button class="btn-main" onclick="fetchData(true)">Загрузить данные</button>
             <div id="mainError" class="error"></div>
         </div>
@@ -347,9 +345,8 @@
                 </div>
                 <div class="period-label" id="periodLabel"></div>
                 <div class="progress-label" id="progressLabel"></div>
-                <!-- Кнопка передает false, так как меняется только период -->
                 <button class="btn-main" style="background:var(--accent-secondary)" onclick="fetchData(false)">Рассчитать</button>
-                <div class="version-tag">v21.0 (Smart Loading)</div>
+                <div class="version-tag">v24.0 (Snappy Finish)</div>
             </div>
         </div>
 
@@ -493,14 +490,15 @@
             `;
         }
         
+        // Очень быстрое моргание (3 раза по 200мс = 600мс)
         async function blinkProgressBar(times) {
             const bar = document.querySelector('.progress-bar-bg');
             if (!bar) return;
             for (let i = 0; i < times; i++) {
                 bar.style.opacity = '0.2';
-                await delay(200);
+                await delay(100);
                 bar.style.opacity = '1';
-                await delay(200);
+                await delay(100);
             }
         }
 
@@ -510,7 +508,7 @@
             flash.style.left = cx + 'px';
             flash.style.top = cy + 'px';
             document.body.appendChild(flash);
-            setTimeout(() => flash.remove(), 800);
+            setTimeout(() => flash.remove(), 800); // Вспышка гаснет за 800мс
             
             const colors = ['#E6007A', '#552BBF', '#43AAB4', '#FFFFFF', '#FFD700'];
             
@@ -531,7 +529,7 @@
                 spark.style.width = size + 'px';
                 spark.style.height = size + 'px';
                 
-                spark.style.animationDuration = (1.0 + Math.random() * 1.0) + 's';
+                spark.style.animationDuration = (1.0 + Math.random() * 1.0) + 's'; // Искры горят до 2х секунд
                 
                 document.body.appendChild(spark);
                 setTimeout(() => spark.remove(), 2000);
@@ -628,7 +626,6 @@
                 
                 document.querySelectorAll('.card').forEach(c => c.classList.remove('hidden'));
                 
-                // Очищаем все прошлые состояния загрузки
                 document.getElementById('addressCard').classList.remove('loading');
                 document.getElementById('configCard').classList.remove('loading');
                 document.getElementById('stakingCard').classList.remove('loading');
@@ -636,7 +633,6 @@
                 document.getElementById('chartCard').classList.remove('loading');
                 document.getElementById('historyCard').classList.remove('loading');
 
-                // Устанавливаем новые состояния согласно логике
                 if (isAddressChanged) {
                     document.getElementById('addressCard').classList.add('loading');
                 }
@@ -668,6 +664,9 @@
                 if (events.length === 0) {
                     document.getElementById('history').innerHTML = `<span class="error">Награды не найдены.</span>`;
                     document.getElementById('income').innerText = "Нет данных";
+                    document.getElementById('incomeCard').classList.remove('loading');
+                    document.getElementById('chartCard').classList.remove('loading');
+                    document.getElementById('historyCard').classList.remove('loading');
                 } else {
                     const fromTs = Math.floor(new Date(startStr + "T00:00:00").getTime() / 1000);
                     const toTs = Math.floor(new Date(endStr + "T23:59:59").getTime() / 1000);
@@ -675,6 +674,9 @@
                     if (allEvents.length === 0) {
                         document.getElementById('history').innerHTML = `<span class="error">За этот период выплат не найдено. Найдено ${events.length} выплат вне этого периода. Нажмите 'Весь период'.</span>`;
                         document.getElementById('income').innerText = "Нет данных за период";
+                        document.getElementById('incomeCard').classList.remove('loading');
+                        document.getElementById('chartCard').classList.remove('loading');
+                        document.getElementById('historyCard').classList.remove('loading');
                     } else {
                         allEvents.sort((a, b) => b.block_timestamp - a.block_timestamp);
                         const minTs = allEvents[allEvents.length - 1].block_timestamp;
@@ -683,35 +685,44 @@
                         document.getElementById('chartEndDate').value = new Date(maxTs * 1000).toISOString().split('T')[0];
 
                         renderIncome();
+                        document.getElementById('incomeCard').classList.remove('loading');
+                        
                         renderHistory();
+                        document.getElementById('historyCard').classList.remove('loading');
+                        
                         updateChartRange();
+                        document.getElementById('chartCard').classList.remove('loading');
                     }
                 }
 
                 await fetchStakingSummary(addr);
+                document.getElementById('stakingCard').classList.remove('loading');
                 
-                // Снимаем все состояния загрузки по завершении
                 document.getElementById('addressCard').classList.remove('loading');
                 document.getElementById('configCard').classList.remove('loading');
-                document.getElementById('stakingCard').classList.remove('loading');
-                document.getElementById('incomeCard').classList.remove('loading');
-                document.getElementById('chartCard').classList.remove('loading');
-                document.getElementById('historyCard').classList.remove('loading');
                 
                 btnAddress.disabled = false; 
                 btnConfig.disabled = false; 
                 btnConfig.innerText = "Рассчитать";
                 
-                // --- ЭПИЧНЫЙ ФИНАЛ ЗАГРУЗКИ ---
+                // --- ЭПИЧНЫЙ ФИНАЛ ЗАГРУЗКИ (СИНХРОНИЗАЦИЯ) ---
                 showProgressBar(100); 
-                await delay(600);
+                await delay(400); 
+                
                 const barEl = document.querySelector('.progress-bar-bg');
                 if (barEl) {
                     const rect = barEl.getBoundingClientRect();
-                    triggerFirework(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                    const cx = rect.left + rect.width / 2;
+                    const cy = rect.top + rect.height / 2;
+                    
+                    triggerFirework(cx, cy);
+                    await blinkProgressBar(3); // Всего 3 быстрых вспышки (0.6 сек)
+                    
+                    barEl.style.opacity = '1';
+                } else {
+                    await delay(600);
                 }
-                await delay(1500); 
-                await blinkProgressBar(3); 
+                // ---------------------
 
             } catch (err) { 
                 console.error(err); showProgress("Ошибка"); showError("Критическая ошибка: " + err.message); 
@@ -942,7 +953,6 @@
 
         window.onload = () => { 
             setPreset(30, document.querySelectorAll('#preset-buttons .btn-sub')[1]); 
-            // Включаем змейку вокруг адреса при старте
             document.getElementById('addressCard').classList.add('loading');
         };
     </script>
