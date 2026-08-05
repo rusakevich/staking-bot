@@ -16,21 +16,31 @@
         .btn-main { width: 100%; padding: 12px; background: #0088cc; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
         .btn-main:disabled { background: #99ccdd; }
         
-        .btn-sub { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; color: #555; }
+        .btn-sub { padding: 8px 4px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; text-align: center; }
         
-        /* Розовые кнопки для дат периода */
-        #preset-buttons { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
-        #preset-buttons .btn-sub { background: #e9ecef; flex: 1 1 auto; text-align: center; }
+        /* Сетка для кнопок дат (Розовые) */
+        #preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* Всегда 3 кнопки в ряд */
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        #preset-buttons .btn-sub { background: #f1f3f5; color: #495057; }
         #preset-buttons .btn-sub.active { background: #e6007a; color: white; }
         
-        /* Синие кнопки для группировки графика */
-        .group-bar { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
-        .group-bar .btn-sub { background: #eef6fb; color: #005580; flex: 1 1 auto; text-align: center; }
+        /* Сетка для кнопок графика (Синие) */
+        .group-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* Всегда 3 кнопки в ряд */
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .group-bar .btn-sub { background: #e7f5ff; color: #1971c2; }
         .group-bar .btn-sub.active { background: #0088cc; color: white; }
 
         h3 { margin-top: 0; font-size: 1.1em; color: #555; display: flex; justify-content: space-between; align-items: center; }
         .row { display: flex; gap: 10px; margin-bottom: 10px; }
-        .col { flex: 1; }
+        .col { flex: 1; min-width: 0; }
         .reward-item { padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95em; }
         .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.8em; color: white; margin-right: 5px; }
         .relay { background: #e6007a; } 
@@ -39,7 +49,7 @@
         .hidden { display: none; }
         .income-box { text-align: center; padding: 10px 0; }
         .income-val { font-size: 2em; font-weight: bold; color: #0088cc; }
-        .chart-container { height: 350px; margin-top: 15px; margin-bottom: 15px; }
+        .chart-container { height: 300px; margin-top: 15px; margin-bottom: 15px; }
         .error { color: red; font-size: 0.9em; margin-top: 10px; text-align: center; }
         .period-label { text-align: center; font-weight: bold; color: #0088cc; margin: 10px 0; font-size: 1.1em; }
         .progress-label { text-align: center; color: #e6007a; font-weight: bold; margin-top: 5px; min-height: 20px; }
@@ -47,6 +57,8 @@
         
         .token-row { padding: 6px 0; border-bottom: 1px solid #eee; font-size: 1em; }
         .token-row:last-child { border-bottom: none; }
+        
+        .version-tag { text-align: right; font-size: 10px; color: #999; margin-top: 5px; }
         
         .rotate-btn {
             display: none;
@@ -68,6 +80,7 @@
             border: none;
         }
 
+        /* Горизонтальный режим */
         #app-wrapper.landscape {
             position: fixed;
             top: 0;
@@ -81,32 +94,12 @@
             -webkit-overflow-scrolling: touch;
             padding: 20px;
             box-sizing: border-box;
+            z-index: 9998;
         }
 
-        /* Адаптация под мобильные устройства */
         @media (max-width: 768px) {
             .rotate-btn { display: block; }
             h3 { font-size: 1em; flex-direction: column; align-items: flex-start; gap: 5px; }
-            .chart-container { height: 300px; }
-            
-            /* Кнопки по 3 в ряд */
-            #preset-buttons .btn-sub, .group-bar .btn-sub {
-                flex: 1 1 30%; 
-                padding: 6px 2px;
-                font-size: 12px;
-            }
-            
-            /* Календарь основного периода в столбик */
-            .row.dates-col {
-                flex-direction: column;
-                gap: 5px;
-            }
-            
-            /* Календарь графика в одну линию */
-            .chart-dates-row {
-                flex-direction: row !important;
-                gap: 10px;
-            }
         }
     </style>
 </head>
@@ -124,7 +117,7 @@
 
         <div class="card hidden" id="configCard">
             <h3>📅 Период анализа</h3>
-            <div class="row dates-col">
+            <div class="row">
                 <div class="col"><label>С</label><input type="date" id="startDate" onchange="onDateChange()"></div>
                 <div class="col"><label>По</label><input type="date" id="endDate" onchange="onDateChange()"></div>
             </div>
@@ -139,6 +132,7 @@
             <div class="period-label" id="periodLabel"></div>
             <div class="progress-label" id="progressLabel"></div>
             <button class="btn-main" style="background:#e6007a;" onclick="fetchData()">Рассчитать</button>
+            <div class="version-tag">v1.6 (Mobile Fix)</div>
         </div>
 
         <div class="card hidden" id="stakingCard">
@@ -163,7 +157,7 @@
             </div>
             <div class="chart-container"><canvas id="rewardsChart"></canvas></div>
             
-            <div class="row chart-dates-row" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
+            <div class="row" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
                 <div class="col"><label>График с:</label><input type="date" id="chartStartDate" onchange="updateChartRange()"></div>
                 <div class="col"><label>По:</label><input type="date" id="chartEndDate" onchange="updateChartRange()"></div>
             </div>
@@ -195,7 +189,8 @@
         function toggleOrientation() {
             const wrapper = document.getElementById('app-wrapper');
             wrapper.classList.toggle('landscape');
-            setTimeout(() => { if (rewardsChart) rewardsChart.resize(); }, 300);
+            // Даем время на применение CSS перед перерисовкой графика
+            setTimeout(() => { if (rewardsChart) rewardsChart.resize(); }, 400);
         }
 
         function toggleHistory() {
