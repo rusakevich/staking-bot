@@ -7,74 +7,32 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <style>
-        /* ЖЕСТКИЙ СБРОС И КОНТРОЛЬ ШИРИНЫ */
-        * { box-sizing: border-box; }
+        /* ЯДЕРНЫЙ СБРОС ОТСТУПОВ */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         
-        body { 
-            font-family: sans-serif; 
-            padding: 0; 
-            background: #f0f2f5; 
-            margin: 0; 
-            color: #333; 
-            overflow-x: hidden; 
-            -webkit-overflow-scrolling: touch; 
-            width: 100%;
-        }
+        body { font-family: sans-serif; background: #f0f2f5; color: #333; overflow-x: hidden; -webkit-overflow-scrolling: touch; width: 100%; }
         
-        #app-wrapper { 
-            width: 100%; 
-            padding: 15px;
-            position: relative;
-        }
+        #app-wrapper { width: 100%; padding: 15px; position: relative; }
         
-        .card { 
-            background: white; 
-            padding: 15px; 
-            border-radius: 12px; 
-            margin-bottom: 15px; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
-            position: relative; 
-            overflow: hidden;
-            width: 100%;
-        }
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; overflow: hidden; width: 100%; }
         
-        input, select { 
-            width: 100%; 
-            padding: 10px; 
-            border: 1px solid #ccc; 
-            border-radius: 8px; 
-            margin-bottom: 10px; 
-            font-size: 16px; 
-            box-sizing: border-box; 
-        }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; font-size: 16px; display: block; }
         
-        .btn-main { 
-            width: 100%; 
-            padding: 12px; 
-            background: #0088cc; 
-            color: white; 
-            border: none; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-size: 16px; 
-            font-weight: bold; 
-            box-sizing: border-box; 
-        }
+        .btn-main { width: 100%; padding: 12px; background: #0088cc; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; display: block; }
         .btn-main:disabled { background: #99ccdd; }
         
-        /* ИДЕАЛЬНАЯ ЛОГИКА КНОПОК ДЛЯ TELEGRAM WEB APP */
+        /* ЯДЕРНАЯ ЛОГИКА КНОПОК ДЛЯ TELEGRAM */
         #preset-buttons, .group-bar {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
-            width: 100%;
-            margin-bottom: 10px;
             justify-content: space-between;
+            width: 100%;
+            gap: 4px;
         }
         
         .btn-sub {
-            flex: 1 1 calc(33.333% - 6px); /* Точный расчет: 3 кнопки в ряд с учетом отступа */
-            max-width: calc(33.333% - 6px);
+            flex: 1 1 0; /* Жесткое деление на равные части */
+            min-width: 30%;
             padding: 8px 2px;
             border: none;
             border-radius: 6px;
@@ -82,54 +40,37 @@
             font-size: 12px;
             font-weight: bold;
             text-align: center;
-            box-sizing: border-box;
-            white-space: nowrap;
             overflow: hidden;
+            white-space: nowrap;
             text-overflow: ellipsis;
-            display: inline-block;
-            line-height: 1.4;
+            display: block;
+            line-height: 1.5;
         }
         
-        /* Розовые кнопки дат */
+        #preset-buttons { margin-bottom: 10px; }
         #preset-buttons .btn-sub { background: #f1f3f5; color: #495057; }
         #preset-buttons .btn-sub.active { background: #e6007a; color: white; }
         
-        /* Синие кнопки графика */
         .group-bar { margin-top: 10px; }
         .group-bar .btn-sub { background: #e7f5ff; color: #1971c2; }
         .group-bar .btn-sub.active { background: #0088cc; color: white; }
 
-        h3 { 
-            margin-top: 0; 
-            font-size: 1.1em; 
-            color: #555; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            gap: 10px;
-        }
+        h3 { font-size: 1.1em; color: #555; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
         
         .row { display: flex; gap: 10px; margin-bottom: 10px; width: 100%; }
-        .col { flex: 1; min-width: 0; box-sizing: border-box; }
+        .col { flex: 1; min-width: 0; }
         
         .reward-item { padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95em; }
         .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.8em; color: white; margin-right: 5px; }
         .relay { background: #e6007a; } 
         .assethub { background: #6d3aff; } 
         .muted { color: #999; font-size: 0.9em; }
-        .hidden { display: none; }
+        .hidden { display: none !important; }
         
         .income-box { text-align: center; padding: 10px 0; }
         .income-val { font-size: 2em; font-weight: bold; color: #0088cc; }
         
-        .chart-container { 
-            height: 280px; 
-            width: 100%; 
-            margin-top: 15px; 
-            margin-bottom: 15px; 
-            position: relative; 
-            z-index: 1;
-        }
+        .chart-container { height: 280px; width: 100%; margin-top: 15px; margin-bottom: 15px; position: relative; z-index: 1; }
         
         .error { color: red; font-size: 0.9em; margin-top: 10px; text-align: center; }
         .period-label { text-align: center; font-weight: bold; color: #0088cc; margin: 10px 0; font-size: 1.1em; }
@@ -161,9 +102,9 @@
             border: none;
         }
 
-        /* ИДЕАЛЬНЫЙ ГОРЗИНТАЛЬНЫЙ РЕЖИМ */
+        /* ГОРЗИНТАЛЬНЫЙ РЕЖИМ С УМЕНЬШЕННЫМ ГРАФИКОМ */
         #app-wrapper.landscape {
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
             width: 100vh; 
@@ -173,14 +114,13 @@
             overflow-y: auto;
             overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
-            padding: 20px;
+            padding: 15px;
             background: #f0f2f5;
             z-index: 9998;
         }
 
-        /* В горизонтальном режиме уменьшаем график, чтобы всё влезало */
         #app-wrapper.landscape .chart-container {
-            height: 200px;
+            height: 180px !important; /* Жестко уменьшаем график в горизонтали */
             margin-bottom: 20px;
         }
 
@@ -219,7 +159,7 @@
             <div class="period-label" id="periodLabel"></div>
             <div class="progress-label" id="progressLabel"></div>
             <button class="btn-main" style="background:#e6007a;" onclick="fetchData()">Рассчитать</button>
-            <div class="version-tag">v1.8 (Mobile Layout Pro)</div>
+            <div class="version-tag">v1.9 (Nuclear Flex Fix)</div>
         </div>
 
         <div class="card hidden" id="stakingCard">
