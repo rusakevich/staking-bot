@@ -15,7 +15,6 @@
         
         .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; overflow: hidden; width: 100%; }
         
-        /* Базовые стили для всех полей ввода */
         input {
             width: 100%;
             padding: 10px;
@@ -30,22 +29,19 @@
         .btn-main { width: 100%; padding: 12px; background: #0088cc; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; display: block; margin-bottom: 5px; }
         .btn-main:disabled { background: #99ccdd; }
         
-        /* ЖЕЛЕЗОБЕТОННАЯ ВЕРСТКА ПОЛЕЙ ДАТ (Без Flexbox) */
         .dates-row {
             width: 100%;
-            font-size: 0; /* Убираем отступы между inline-block */
+            font-size: 0;
             margin-bottom: 15px;
         }
         .date-col {
             display: inline-block;
             vertical-align: top;
-            width: 49%; /* Идеально делит экран пополам */
+            width: 49%;
             box-sizing: border-box;
         }
-        /* Отступ между двумя полями календаря */
         .date-col:first-child { margin-right: 2%; }
         
-        /* ЖЕЛЕЗОБЕТОННАЯ ВЕРСТКА КНОПОК (Без Flexbox) */
         #preset-buttons, .group-bar {
             width: 100%;
             font-size: 0;
@@ -56,7 +52,7 @@
         .btn-sub {
             display: inline-block;
             vertical-align: top;
-            width: 32%; /* Ровно 3 кнопки в ряд */
+            width: 32%;
             margin-right: 2%;
             margin-bottom: 6px;
             padding: 8px 2px;
@@ -71,7 +67,6 @@
             overflow: hidden;
             word-break: break-word;
         }
-        /* Убираем правый отступ у каждой 3-й кнопки, чтобы ряд был ровным */
         .btn-sub:nth-child(3n) {
             margin-right: 0;
         }
@@ -98,7 +93,7 @@
             height: 280px; 
             width: 100%; 
             margin-top: 15px; 
-            margin-bottom: 25px; /* Жесткий отступ, чтобы не налезать на календарь */
+            margin-bottom: 25px; 
             position: relative; 
             z-index: 1;
             overflow: hidden;
@@ -134,7 +129,6 @@
             border: none;
         }
 
-        /* ГОРЗИНТАЛЬНЫЙ РЕЖИМ */
         #app-wrapper.landscape {
             position: fixed;
             top: 0;
@@ -152,8 +146,8 @@
         }
 
         #app-wrapper.landscape .chart-container {
-            height: 180px !important;
-            margin-bottom: 30px !important; /* Огромный отступ в горизонтали */
+            height: 220px !important;
+            margin-bottom: 30px !important;
         }
 
         @media (max-width: 768px) {
@@ -191,7 +185,7 @@
             <div class="period-label" id="periodLabel"></div>
             <div class="progress-label" id="progressLabel"></div>
             <button class="btn-main" style="background:#e6007a;" onclick="fetchData()">Рассчитать</button>
-            <div class="version-tag">v3.0 (No Flexbox)</div>
+            <div class="version-tag">v5.0 (Cache Buster)</div>
         </div>
 
         <div class="card hidden" id="stakingCard">
@@ -248,7 +242,21 @@
         function toggleOrientation() {
             const wrapper = document.getElementById('app-wrapper');
             wrapper.classList.toggle('landscape');
-            setTimeout(() => { if (rewardsChart) rewardsChart.resize(); }, 500);
+            
+            // Продвинутая перерисовка графика через requestAnimationFrame.
+            // Это заставляет браузер дождаться полной отрисовки CSS (поворота экрана),
+            // и только после этого перерисовать график с новыми размерами.
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    if (rewardsChart) {
+                        rewardsChart.destroy();
+                        rewardsChart = null;
+                    }
+                    if (allRewards.length > 0) {
+                        updateChartRange();
+                    }
+                });
+            });
         }
 
         function toggleHistory() {
@@ -314,7 +322,7 @@
             currentGroup = group;
             document.querySelectorAll('.group-bar .btn-sub').forEach(b => b.classList.remove('active'));
             if (btn) btn.classList.add('active');
-            if (allRewards.length > 0) renderChart();
+            if (allRewards.length > 0) updateChartRange();
         }
 
         async function fetchRewards(baseUrl, addr, chainName) {
@@ -378,7 +386,7 @@
 
                         renderIncome();
                         renderHistory();
-                        renderChart();
+                        updateChartRange();
                     }
                 }
 
@@ -542,8 +550,8 @@
             return 1; 
         }
 
-        function renderChart(dataToRender = allRewards) {
-            if (dataToRender.length === 0) {
+        function renderChart(dataToRender) {
+            if (!dataToRender || dataToRender.length === 0) {
                 if (rewardsChart) rewardsChart.destroy();
                 return;
             }
