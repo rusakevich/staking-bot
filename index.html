@@ -7,7 +7,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <style>
-        body { font-family: sans-serif; padding: 15px; background: #f0f2f5; margin: 0; color: #333; box-sizing: border-box; }
+        body { font-family: sans-serif; padding: 0; background: #f0f2f5; margin: 0; color: #333; box-sizing: border-box; overflow-x: hidden; }
+        
+        #app-wrapper { width: 100%; box-sizing: border-box; padding: 15px; }
+        
         .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 10px; font-size: 16px; }
         .btn-main { width: 100%; padding: 12px; background: #0088cc; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
@@ -30,13 +33,11 @@
         .error { color: red; font-size: 0.9em; margin-top: 10px; text-align: center; }
         .period-label { text-align: center; font-weight: bold; color: #0088cc; margin: 10px 0; font-size: 1.1em; }
         .progress-label { text-align: center; color: #e6007a; font-weight: bold; margin-top: 5px; min-height: 20px; }
-        .val-item { padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9em; }
-        .val-status { padding: 2px 6px; border-radius: 4px; font-size: 0.8em; color: white; margin-right: 5px; }
-        .active { background: #28a745; }
-        .waiting { background: #ffc107; color: #333; }
         .toggle-btn { background: #e9ecef; color: #555; border: none; padding: 5px 10px; border-radius: 5px; font-size: 0.8em; cursor: pointer; font-weight: bold; }
         
-        /* Плавающая кнопка поворота экрана */
+        .token-row { padding: 6px 0; border-bottom: 1px solid #eee; font-size: 1em; }
+        .token-row:last-child { border-bottom: none; }
+        
         .rotate-btn {
             display: none;
             position: fixed;
@@ -57,29 +58,26 @@
             border: none;
         }
 
-        /* Адаптация под мобильные устройства */
+        #app-wrapper.landscape {
+            position: fixed;
+            top: 0;
+            left: 100%;
+            transform: rotate(90deg);
+            transform-origin: top left;
+            width: 100vh;
+            height: 100vw;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
         @media (max-width: 768px) {
             .rotate-btn { display: block; }
             h3 { font-size: 1em; flex-direction: column; align-items: flex-start; gap: 5px; }
             .chart-container { height: 300px; }
-            .btn-sub { flex: 1 1 45%; text-align: center; padding: 8px 5px; } /* Кнопки по 2 в ряд */
-            .row { flex-direction: column; gap: 5px; } /* Календарь в столбик */
-        }
-
-        /* Горизонтальный режим с правильной прокруткой */
-        body.force-landscape {
-            transform: rotate(90deg);
-            transform-origin: bottom left;
-            width: 100vh;
-            height: 100vw;
-            position: fixed;
-            top: -100vw;
-            left: 0;
-            overflow-y: auto;
-            overflow-x: hidden;
-            -webkit-overflow-scrolling: touch; /* Плавная прокрутка на iOS */
-            padding: 20px;
-            box-sizing: border-box;
+            .btn-sub { flex: 1 1 45%; text-align: center; padding: 8px 5px; }
+            .row { flex-direction: column; gap: 5px; }
         }
     </style>
 </head>
@@ -87,58 +85,65 @@
 
     <button class="rotate-btn" id="rotateBtn" onclick="toggleOrientation()">🔄</button>
 
-    <div class="card">
-        <h3>Адрес Polkadot</h3>
-        <input type="text" id="address" placeholder="Вставьте ваш адрес (Polkadot / Asset Hub)">
-        <button class="btn-main" onclick="fetchData()">Загрузить данные</button>
-        <div id="mainError" class="error"></div>
-    </div>
-
-    <div class="card hidden" id="configCard">
-        <h3>📅 Период анализа</h3>
-        <div class="row">
-            <div class="col"><label>С</label><input type="date" id="startDate" onchange="onDateChange()"></div>
-            <div class="col"><label>По</label><input type="date" id="endDate" onchange="onDateChange()"></div>
+    <div id="app-wrapper">
+        <div class="card">
+            <h3>Адрес Polkadot</h3>
+            <input type="text" id="address" placeholder="Вставьте ваш адрес (Polkadot / Asset Hub)">
+            <button class="btn-main" onclick="fetchData()">Загрузить данные</button>
+            <div id="mainError" class="error"></div>
         </div>
-        <div style="display: flex; flex-wrap: wrap; margin-bottom:10px;">
-            <button class="btn-sub" onclick="setPreset(7, this)">7 дней</button>
-            <button class="btn-sub active" onclick="setPreset(30, this)">30 дней</button>
-            <button class="btn-sub" onclick="setPreset(90, this)">90 дней</button>
-            <button class="btn-sub" onclick="setPreset(180, this)">Полгода</button>
-            <button class="btn-sub" onclick="setPreset(365, this)">Год</button>
-            <button class="btn-sub" onclick="setPreset(99999, this)">Весь период</button>
+
+        <div class="card hidden" id="configCard">
+            <h3>📅 Период анализа</h3>
+            <div class="row">
+                <div class="col"><label>С</label><input type="date" id="startDate" onchange="onDateChange()"></div>
+                <div class="col"><label>По</label><input type="date" id="endDate" onchange="onDateChange()"></div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; margin-bottom:10px;">
+                <button class="btn-sub" onclick="setPreset(7, this)">7 дней</button>
+                <button class="btn-sub active" onclick="setPreset(30, this)">30 дней</button>
+                <button class="btn-sub" onclick="setPreset(90, this)">90 дней</button>
+                <button class="btn-sub" onclick="setPreset(180, this)">Полгода</button>
+                <button class="btn-sub" onclick="setPreset(365, this)">Год</button>
+                <button class="btn-sub" onclick="setPreset(99999, this)">Весь период</button>
+            </div>
+            <div class="period-label" id="periodLabel"></div>
+            <div class="progress-label" id="progressLabel"></div>
+            <button class="btn-main" style="background:#e6007a;" onclick="fetchData()">Рассчитать</button>
         </div>
-        <div class="period-label" id="periodLabel"></div>
-        <div class="progress-label" id="progressLabel"></div>
-        <button class="btn-main" style="background:#e6007a;" onclick="fetchData()">Рассчитать</button>
-    </div>
 
-    <div class="card hidden" id="incomeCard">
-        <h3>💎 Доход от стейкинга</h3>
-        <div id="income">Загрузка...</div>
-    </div>
-
-    <div class="card hidden" id="chartCard">
-        <h3>📊 График доходов</h3>
-        <div class="group-bar">
-            <button class="btn-sub" onclick="setGroup('day', this)">По дням</button>
-            <button class="btn-sub" onclick="setGroup('week', this)">По неделям</button>
-            <button class="btn-sub active" onclick="setGroup('month', this)">По месяцам</button>
-            <button class="btn-sub" onclick="setGroup('quarter', this)">По кварталам</button>
-            <button class="btn-sub" onclick="setGroup('halfyear', this)">Полугодия</button>
-            <button class="btn-sub" onclick="setGroup('year', this)">По годам</button>
+        <div class="card hidden" id="stakingCard">
+            <h3>💰 Стейкинг и Баланс</h3>
+            <div id="stakingSummary">Загрузка...</div>
         </div>
-        <div class="chart-container"><canvas id="rewardsChart"></canvas></div>
-    </div>
 
-    <div class="card hidden" id="historyCard">
-        <h3>📜 История наград <button class="toggle-btn" id="toggleHistBtn" onclick="toggleHistory()">Развернуть</button></h3>
-        <div id="history" class="hidden">Ожидание загрузки...</div>
-    </div>
+        <div class="card hidden" id="incomeCard">
+            <h3>💎 Доход от стейкинга</h3>
+            <div id="income">Загрузка...</div>
+        </div>
 
-    <div class="card hidden" id="validatorsCard">
-        <h3>🧱 Валидаторы</h3>
-        <div id="validators">Ожидание загрузки валидаторов...</div>
+        <div class="card hidden" id="chartCard">
+            <h3>📊 График доходов</h3>
+            <div class="group-bar">
+                <button class="btn-sub" onclick="setGroup('day', this)">По дням</button>
+                <button class="btn-sub" onclick="setGroup('week', this)">По неделям</button>
+                <button class="btn-sub active" onclick="setGroup('month', this)">По месяцам</button>
+                <button class="btn-sub" onclick="setGroup('quarter', this)">По кварталам</button>
+                <button class="btn-sub" onclick="setGroup('halfyear', this)">Полугодия</button>
+                <button class="btn-sub" onclick="setGroup('year', this)">По годам</button>
+            </div>
+            <div class="chart-container"><canvas id="rewardsChart"></canvas></div>
+            
+            <div class="row" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
+                <div class="col"><label>График с:</label><input type="date" id="chartStartDate" onchange="updateChartRange()"></div>
+                <div class="col"><label>По:</label><input type="date" id="chartEndDate" onchange="updateChartRange()"></div>
+            </div>
+        </div>
+
+        <div class="card hidden" id="historyCard">
+            <h3>📜 История наград <button class="toggle-btn" id="toggleHistBtn" onclick="toggleHistory()">Развернуть</button></h3>
+            <div id="history" class="hidden">Ожидание загрузки...</div>
+        </div>
     </div>
 
     <script>
@@ -159,7 +164,8 @@
         }
 
         function toggleOrientation() {
-            document.body.classList.toggle('force-landscape');
+            const wrapper = document.getElementById('app-wrapper');
+            wrapper.classList.toggle('landscape');
             setTimeout(() => { if (rewardsChart) rewardsChart.resize(); }, 300);
         }
 
@@ -261,9 +267,9 @@
                 const toTs = Math.floor(new Date(endStr + "T23:59:59").getTime() / 1000);
                 
                 document.querySelectorAll('.card').forEach(c => c.classList.remove('hidden'));
+                document.getElementById('stakingSummary').innerText = "Расчет стейкинга...";
                 document.getElementById('income').innerText = "Расчет дохода...";
                 document.getElementById('history').innerText = "Ожидание загрузки...";
-                document.getElementById('validators').innerText = "Ожидание загрузки...";
                 
                 const btn = document.querySelector('#configCard .btn-main');
                 btn.disabled = true; btn.innerText = "Идет загрузка...";
@@ -272,33 +278,29 @@
                 const relayRes = await fetchRewards("https://polkadot.api.subscan.io/api", addr, "Relay Chain");
                 
                 let rewards = [...assetRes.list, ...relayRes.list];
-                let errors = [];
-                if (assetRes.error) errors.push("Asset Hub: " + assetRes.error);
-                if (relayRes.error) errors.push("Relay: " + relayRes.error);
 
                 if (rewards.length === 0) {
-                    let errMsg = "Награды не найдены. ";
-                    if (errors.length > 0) {
-                        errMsg += "Причина: " + errors.join(" | ");
-                    } else {
-                        errMsg += "Возможно, за выбранный период выплат не было. Попробуйте нажать 'Весь период'.";
-                    }
-                    document.getElementById('history').innerHTML = `<span class="error">${errMsg}</span>`;
+                    document.getElementById('history').innerHTML = `<span class="error">Награды не найдены.</span>`;
                     document.getElementById('income').innerText = "Нет данных";
                 } else {
                     allRewards = rewards.filter(r => r.block_timestamp >= fromTs && r.block_timestamp <= toTs);
                     if (allRewards.length === 0) {
-                        document.getElementById('history').innerHTML = `<span class="error">За этот период (${formatDate(startStr)} - ${formatDate(endStr)}) выплат не найдено. Найдено ${rewards.length} выплат вне этого периода. Нажмите 'Весь период'.</span>`;
+                        document.getElementById('history').innerHTML = `<span class="error">За этот период выплат не найдено. Найдено ${rewards.length} выплат вне этого периода. Нажмите 'Весь период'.</span>`;
                         document.getElementById('income').innerText = "Нет данных за период";
                     } else {
                         allRewards.sort((a, b) => b.block_timestamp - a.block_timestamp);
+                        const minTs = allRewards[allRewards.length - 1].block_timestamp;
+                        const maxTs = allRewards[0].block_timestamp;
+                        document.getElementById('chartStartDate').value = new Date(minTs * 1000).toISOString().split('T')[0];
+                        document.getElementById('chartEndDate').value = new Date(maxTs * 1000).toISOString().split('T')[0];
+
                         renderIncome();
                         renderHistory();
                         renderChart();
                     }
                 }
 
-                await fetchValidators(addr);
+                await fetchStakingSummary(addr);
                 
                 btn.disabled = false; btn.innerText = "Рассчитать";
                 showProgress("Готово!");
@@ -309,63 +311,68 @@
             }
         }
 
-        async function fetchValidators(addr) {
-            showProgress("Шаг 3: Загрузка валидаторов...");
+        async function fetchStakingSummary(addr) {
+            showProgress("Загрузка стейкинга и баланса...");
             
-            // Добавлены параметры row и page, без них API не возвращает список номинаций
             const relayNomRes = await apiFetch("https://polkadot.api.subscan.io/api/scan/staking/nominator", {address: addr, row: 100, page: 0});
             await delay(500);
             const assetNomRes = await apiFetch("https://assethub-polkadot.api.subscan.io/api/scan/staking/nominator", {address: addr, row: 100, page: 0});
             await delay(500);
             
-            let nominations = [];
+            const relayAccRes = await apiFetch("https://polkadot.api.subscan.io/api/scan/account", {address: addr});
+            await delay(500);
+            const assetAccRes = await apiFetch("https://assethub-polkadot.api.subscan.io/api/scan/account", {address: addr});
             
-            // Ищем в стандартном месте
-            if (relayNomRes?.data?.staking_info?.nominations) nominations = nominations.concat(relayNomRes.data.staking_info.nominations);
-            if (assetNomRes?.data?.staking_info?.nominations) nominations = nominations.concat(assetNomRes.data.staking_info.nominations);
+            let totalBonded = 0;
+            let totalLocked = 0;
+            let activeChain = "";
             
-            // Ищем в корневом месте (на случай изменения API)
-            if (relayNomRes?.data?.nominations) nominations = nominations.concat(relayNomRes.data.nominations);
-            if (assetNomRes?.data?.nominations) nominations = nominations.concat(assetNomRes.data.nominations);
-
-            if (nominations.length > 0 && typeof nominations[0] === 'object') {
-                nominations = nominations.map(n => n.target || n.stash || n.address).filter(Boolean);
+            if (relayNomRes?.data?.bonded && parseInt(relayNomRes.data.bonded) > 0) {
+                totalBonded += parseInt(relayNomRes.data.bonded);
+                activeChain = "Relay Chain";
             }
-
-            if (nominations.length === 0) {
-                let debugHTML = "<i>Список номинаций пуст.</i><br><br>";
-                debugHTML += `<div class="muted">Relay Response: <br><code style="word-break:break-all;">${JSON.stringify(relayNomRes.data || relayNomRes.message)}</code></div><br>`;
-                debugHTML += `<div class="muted">Asset Hub Response: <br><code style="word-break:break-all;">${JSON.stringify(assetNomRes.data || assetNomRes.message)}</code></div>`;
-                document.getElementById('validators').innerHTML = debugHTML;
-                return;
+            if (assetNomRes?.data?.bonded && parseInt(assetNomRes.data.bonded) > 0) {
+                totalBonded += parseInt(assetNomRes.data.bonded);
+                activeChain = "Asset Hub";
             }
-
-            let valHTML = `<div class="muted" style="margin-bottom:10px;">Всего номинировано: ${nominations.length}. Проверяем статус...</div>`;
-            document.getElementById('validators').innerHTML = valHTML;
-
-            for (let i = 0; i < nominations.length; i++) {
-                showProgress(`Проверка валидатора ${i + 1} из ${nominations.length}...`);
-                const valAddr = nominations[i];
-                const valRes = await apiFetch("https://polkadot.api.subscan.io/api/scan/staking/validator", {stash: valAddr});
-                await delay(1000); 
-
-                if (valRes.code === 0 && valRes.data && valRes.data.info) {
-                    const info = valRes.data.info;
-                    const statusClass = info.status === "Elected" ? "active" : "waiting";
-                    const statusText = info.status === "Elected" ? "Активен (Стейкает)" : "Ожидает (Не стейкает)";
-                    const commission = (parseInt(info.validator_prefs_value || 0) / 10000000).toFixed(2);
-                    const bondedTotal = formatAmount(info.bonded_total, DOT_DECIMALS);
-                    
-                    valHTML += `
-                        <div class="val-item">
-                            <span class="val-status ${statusClass}">${statusText}</span><br>
-                            <b>Адрес:</b> <span style="font-family:monospace; font-size:0.9em;">${valAddr}</span><br>
-                            <b>Комиссия:</b> ${commission}% | <b>Всего bonded:</b> ${bondedTotal} DOT | <b>Номинаторов:</b> ${info.count_nominators || 0}
-                        </div>
-                    `;
-                    document.getElementById('validators').innerHTML = valHTML;
+            
+            if (relayAccRes?.data?.locked) totalLocked += parseInt(relayAccRes.data.locked);
+            if (assetAccRes?.data?.locked) totalLocked += parseInt(assetAccRes.data.locked);
+            
+            let html = "";
+            
+            if (totalBonded > 0) {
+                let status = "Active";
+                if (activeChain) status += ` (${activeChain})`;
+                html += `<div class="token-row">Статус: <b>${status}</b></div>`;
+                html += `<div class="token-row">Застейкано (Bonded): <b style="color:#e6007a;">${formatAmount(totalBonded, DOT_DECIMALS)} DOT</b></div>`;
+                
+                if (totalLocked > 0) {
+                    html += `<div class="token-row">Заблокировано (Locked): <b>${formatAmount(totalLocked, DOT_DECIMALS)} DOT</b></div>`;
+                }
+            } else {
+                if (totalLocked > 0) {
+                    html += `<div class="token-row">Статус: <b>Нет активного стейкинга</b></div>`;
+                    html += `<div class="token-row">Заблокировано (Locked): <b>${formatAmount(totalLocked, DOT_DECIMALS)} DOT</b></div>`;
+                } else {
+                    html += `<div class="token-row">Стейкинг не активен.</div>`;
                 }
             }
+            
+            document.getElementById('stakingSummary').innerHTML = html;
+        }
+
+        function updateChartRange() {
+            if (allRewards.length === 0) return;
+            const startStr = document.getElementById('chartStartDate').value;
+            const endStr = document.getElementById('chartEndDate').value;
+            if (!startStr || !endStr) return;
+
+            const fromTs = Math.floor(new Date(startStr + "T00:00:00").getTime() / 1000);
+            const toTs = Math.floor(new Date(endStr + "T23:59:59").getTime() / 1000);
+            
+            const filtered = allRewards.filter(r => r.block_timestamp >= fromTs && r.block_timestamp <= toTs);
+            renderChart(filtered);
         }
 
         function renderIncome() {
@@ -453,11 +460,16 @@
             return 1; 
         }
 
-        function renderChart() {
+        function renderChart(dataToRender = allRewards) {
+            if (dataToRender.length === 0) {
+                if (rewardsChart) rewardsChart.destroy();
+                return;
+            }
+
             const groupedData = {};
             const groupTimestamps = {};
             
-            allRewards.forEach(r => {
+            dataToRender.forEach(r => {
                 const key = getGroupKey(r.block_timestamp, currentGroup);
                 if (!groupedData[key]) {
                     groupedData[key] = 0;
@@ -489,7 +501,9 @@
                             backgroundColor: 'rgba(0, 136, 204, 0.6)', borderColor: '#0088cc',
                             borderWidth: 1, borderRadius: 4, yAxisID: 'y', order: 2,
                             datalabels: {
-                                display: true,
+                                display: function(context) {
+                                    return context.dataset.data.length <= 15 || context.dataIndex % Math.ceil(context.dataset.data.length / 15) === 0;
+                                },
                                 align: 'top',
                                 color: '#0088cc',
                                 font: { weight: 'bold', size: 10 },
@@ -502,7 +516,9 @@
                             tension: 0.3, fill: false, pointRadius: 5, pointHoverRadius: 7,
                             yAxisID: 'y', order: 1,
                             datalabels: {
-                                display: true,
+                                display: function(context) {
+                                    return context.dataset.data.length <= 15 || context.dataIndex % Math.ceil(context.dataset.data.length / 15) === 0;
+                                },
                                 align: 'bottom',
                                 color: '#e6007a',
                                 font: { weight: 'bold', size: 10 },
@@ -512,12 +528,13 @@
                     ]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false, layout: { padding: { top: 30 } },
+                    responsive: true, maintainAspectRatio: false, layout: { padding: { top: 30, bottom: 10 } },
                     plugins: {
                         legend: { display: true, position: 'top', labels: { boxWidth: 15, font: { size: 11 } } },
                         tooltip: { enabled: true }
                     },
                     scales: { 
+                        // ИСПРАВЛЕНА ОШИБКА С КАВЫЧКАМИ ЗДЕСЬ:
                         y: { beginAtZero: true, ticks: { color: '#666', font: { size: 10 } }, grid: { color: '#eee' } },
                         x: { ticks: { color: '#666', font: { size: 10 } }, grid: { display: false } }
                     }
