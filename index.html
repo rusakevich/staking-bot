@@ -18,21 +18,20 @@
         
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; font-size: 16px; display: block; }
         
-        .btn-main { width: 100%; padding: 12px; background: #0088cc; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; display: block; }
+        .btn-main { width: 100%; padding: 12px; background: #0088cc; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; display: block; margin-bottom: 5px; }
         .btn-main:disabled { background: #99ccdd; }
         
-        /* ЯДЕРНАЯ ЛОГИКА КНОПОК ДЛЯ TELEGRAM */
+        /* БРОНЕБОЙНАЯ ЛОГИКА КНОПОК ДЛЯ TELEGRAM WEB APP */
         #preset-buttons, .group-bar {
             display: flex;
             flex-wrap: wrap;
-            justify-content: space-between;
+            justify-content: space-between; /* Равномерно распределяет кнопки */
             width: 100%;
-            gap: 4px;
         }
         
         .btn-sub {
-            flex: 1 1 0; /* Жесткое деление на равные части */
-            min-width: 30%;
+            width: 32%; /* Жесткая ширина: ровно 3 кнопки в ряд */
+            margin-bottom: 5px; /* Отступ снизу */
             padding: 8px 2px;
             border: none;
             border-radius: 6px;
@@ -43,11 +42,11 @@
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
-            display: block;
+            box-sizing: border-box;
             line-height: 1.5;
         }
         
-        #preset-buttons { margin-bottom: 10px; }
+        #preset-buttons { margin-bottom: 5px; }
         #preset-buttons .btn-sub { background: #f1f3f5; color: #495057; }
         #preset-buttons .btn-sub.active { background: #e6007a; color: white; }
         
@@ -58,7 +57,7 @@
         h3 { font-size: 1.1em; color: #555; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
         
         .row { display: flex; gap: 10px; margin-bottom: 10px; width: 100%; }
-        .col { flex: 1; min-width: 0; }
+        .col { flex: 1; min-width: 0; box-sizing: border-box; }
         
         .reward-item { padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95em; }
         .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.8em; color: white; margin-right: 5px; }
@@ -159,7 +158,7 @@
             <div class="period-label" id="periodLabel"></div>
             <div class="progress-label" id="progressLabel"></div>
             <button class="btn-main" style="background:#e6007a;" onclick="fetchData()">Рассчитать</button>
-            <div class="version-tag">v1.9 (Nuclear Flex Fix)</div>
+            <div class="version-tag">v2.0 (Bulletproof CSS)</div>
         </div>
 
         <div class="card hidden" id="stakingCard">
@@ -216,7 +215,6 @@
         function toggleOrientation() {
             const wrapper = document.getElementById('app-wrapper');
             wrapper.classList.toggle('landscape');
-            // Даем время 500мс на полную отрисовку CSS перед перерасчетом размера графика
             setTimeout(() => { if (rewardsChart) rewardsChart.resize(); }, 500);
         }
 
