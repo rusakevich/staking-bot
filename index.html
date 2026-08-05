@@ -7,73 +7,123 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <style>
-        /* ЖЕСТКИЙ СБРОС ОТСТУПОВ ДЛЯ ПРЕДОТВРАЩЕНИЯ ВЫЛАЗИТ */
+        /* ЖЕСТКИЙ СБРОС И КОНТРОЛЬ ШИРИНЫ */
         * { box-sizing: border-box; }
         
-        body { font-family: sans-serif; padding: 0; background: #f0f2f5; margin: 0; color: #333; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+        body { 
+            font-family: sans-serif; 
+            padding: 0; 
+            background: #f0f2f5; 
+            margin: 0; 
+            color: #333; 
+            overflow-x: hidden; 
+            -webkit-overflow-scrolling: touch; 
+            width: 100%;
+        }
         
-        #app-wrapper { width: 100%; padding: 15px; }
+        #app-wrapper { 
+            width: 100%; 
+            padding: 15px;
+            position: relative;
+        }
         
-        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; font-size: 16px; box-sizing: border-box; }
-        .btn-main { width: 100%; padding: 12px; background: #0088cc; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; box-sizing: border-box; }
+        .card { 
+            background: white; 
+            padding: 15px; 
+            border-radius: 12px; 
+            margin-bottom: 15px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+            position: relative; 
+            overflow: hidden;
+            width: 100%;
+        }
+        
+        input, select { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            margin-bottom: 10px; 
+            font-size: 16px; 
+            box-sizing: border-box; 
+        }
+        
+        .btn-main { 
+            width: 100%; 
+            padding: 12px; 
+            background: #0088cc; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: bold; 
+            box-sizing: border-box; 
+        }
         .btn-main:disabled { background: #99ccdd; }
         
-        /* Кнопки дат (Розовые) - Жесткая сетка */
-        #preset-buttons {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 5px;
+        /* ИДЕАЛЬНАЯ ЛОГИКА КНОПОК ДЛЯ TELEGRAM WEB APP */
+        #preset-buttons, .group-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
             width: 100%;
             margin-bottom: 10px;
+            justify-content: space-between;
         }
         
-        /* Кнопки графика (Синие) - Жесткая сетка */
-        .group-bar {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 5px;
-            width: 100%;
-            margin-top: 10px;
-        }
-
         .btn-sub {
-            padding: 8px 2px; /* Уменьшил боковые отступы до 2px */
+            flex: 1 1 calc(33.333% - 6px); /* Точный расчет: 3 кнопки в ряд с учетом отступа */
+            max-width: calc(33.333% - 6px);
+            padding: 8px 2px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 12px; /* Уменьшил шрифт */
+            font-size: 12px;
             font-weight: bold;
             text-align: center;
             box-sizing: border-box;
-            min-width: 0; /* Запрещаем вылезать за границы */
-            width: 100%;
-            display: block;
-            white-space: nowrap; /* Запрещаем перенос слов */
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            display: inline-block;
+            line-height: 1.4;
         }
         
+        /* Розовые кнопки дат */
         #preset-buttons .btn-sub { background: #f1f3f5; color: #495057; }
         #preset-buttons .btn-sub.active { background: #e6007a; color: white; }
         
+        /* Синие кнопки графика */
+        .group-bar { margin-top: 10px; }
         .group-bar .btn-sub { background: #e7f5ff; color: #1971c2; }
         .group-bar .btn-sub.active { background: #0088cc; color: white; }
 
-        h3 { margin-top: 0; font-size: 1.1em; color: #555; display: flex; justify-content: space-between; align-items: center; }
+        h3 { 
+            margin-top: 0; 
+            font-size: 1.1em; 
+            color: #555; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            gap: 10px;
+        }
+        
         .row { display: flex; gap: 10px; margin-bottom: 10px; width: 100%; }
-        .col { flex: 1; min-width: 0; }
+        .col { flex: 1; min-width: 0; box-sizing: border-box; }
+        
         .reward-item { padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95em; }
         .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.8em; color: white; margin-right: 5px; }
         .relay { background: #e6007a; } 
         .assethub { background: #6d3aff; } 
         .muted { color: #999; font-size: 0.9em; }
         .hidden { display: none; }
+        
         .income-box { text-align: center; padding: 10px 0; }
         .income-val { font-size: 2em; font-weight: bold; color: #0088cc; }
         
         .chart-container { 
-            height: 300px; 
+            height: 280px; 
             width: 100%; 
             margin-top: 15px; 
             margin-bottom: 15px; 
@@ -84,7 +134,7 @@
         .error { color: red; font-size: 0.9em; margin-top: 10px; text-align: center; }
         .period-label { text-align: center; font-weight: bold; color: #0088cc; margin: 10px 0; font-size: 1.1em; }
         .progress-label { text-align: center; color: #e6007a; font-weight: bold; margin-top: 5px; min-height: 20px; }
-        .toggle-btn { background: #e9ecef; color: #555; border: none; padding: 5px 10px; border-radius: 5px; font-size: 0.8em; cursor: pointer; font-weight: bold; }
+        .toggle-btn { background: #e9ecef; color: #555; border: none; padding: 5px 10px; border-radius: 5px; font-size: 0.8em; cursor: pointer; font-weight: bold; flex-shrink: 0; }
         
         .token-row { padding: 6px 0; border-bottom: 1px solid #eee; font-size: 1em; }
         .token-row:last-child { border-bottom: none; }
@@ -111,30 +161,32 @@
             border: none;
         }
 
-        /* Идеальный горизонтальный режим */
+        /* ИДЕАЛЬНЫЙ ГОРЗИНТАЛЬНЫЙ РЕЖИМ */
         #app-wrapper.landscape {
             position: fixed;
             top: 0;
-            left: 100%; /* Сдвигаем вправо перед поворотом */
-            transform: rotate(90deg);
+            left: 0;
+            width: 100vh; 
+            height: 100vw; 
             transform-origin: top left;
-            width: 100vh; /* Высота экрана становится шириной */
-            height: 100vw; /* Ширина экрана становится высотой */
+            transform: rotate(90deg) translateY(-100vw);
             overflow-y: auto;
             overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
             padding: 20px;
             background: #f0f2f5;
+            z-index: 9998;
         }
 
-        /* В горизонтальном режиме график делаем чуть меньше, чтобы всё влезало */
+        /* В горизонтальном режиме уменьшаем график, чтобы всё влезало */
         #app-wrapper.landscape .chart-container {
-            height: 220px;
+            height: 200px;
+            margin-bottom: 20px;
         }
 
         @media (max-width: 768px) {
             .rotate-btn { display: block; }
-            h3 { font-size: 1em; flex-direction: column; align-items: flex-start; gap: 5px; }
+            h3 { font-size: 1em; flex-direction: row; align-items: center; }
         }
     </style>
 </head>
@@ -167,7 +219,7 @@
             <div class="period-label" id="periodLabel"></div>
             <div class="progress-label" id="progressLabel"></div>
             <button class="btn-main" style="background:#e6007a;" onclick="fetchData()">Рассчитать</button>
-            <div class="version-tag">v1.7 (Grid Layout Fix)</div>
+            <div class="version-tag">v1.8 (Mobile Layout Pro)</div>
         </div>
 
         <div class="card hidden" id="stakingCard">
