@@ -365,7 +365,7 @@
                 <div class="period-label" id="periodLabel"></div>
                 <div class="progress-label" id="progressLabel"></div>
                 <button class="btn-main" style="background:var(--accent-secondary)" onclick="fetchData(false)">Рассчитать</button>
-                <div class="version-tag">v26.0 (Demo Mode)</div>
+                <div class="version-tag">v27.0 (ISO Week Fix)</div>
             </div>
         </div>
 
@@ -634,18 +634,16 @@
 
         function generateDemoData() {
             demoEvents = [];
-            // Генерируем выплаты за последние 2 года (730 дней)
             let currentTime = Math.floor(Date.now() / 1000);
             const startTime = currentTime - (730 * 86400);
             
             while (currentTime > startTime) {
-                // Прыгаем назад на 1-4 дня (имитация эпох)
                 currentTime -= Math.floor(Math.random() * 3 * 86400) + 86400;
                 
-                const isSlash = Math.random() < 0.05; // 5% шанс слэшинга
+                const isSlash = Math.random() < 0.05; 
                 const amount = isSlash 
-                    ? -(Math.floor(Math.random() * 5 * 10**10) + 1 * 10**10) // Слэш 0.1 - 0.5 DOT
-                    : (Math.floor(Math.random() * 4 * 10**10) + 0.5 * 10**10); // Награда 0.05 - 0.45 DOT
+                    ? -(Math.floor(Math.random() * 5 * 10**10) + 1 * 10**10) 
+                    : (Math.floor(Math.random() * 4 * 10**10) + 0.5 * 10**10); 
                 
                 const chain = Math.random() > 0.5 ? "Relay" : "Asset Hub";
                 
@@ -657,7 +655,6 @@
                 });
             }
 
-            // Генерируем стейкинг
             const bonded = Math.floor(Math.random() * 50000 * 10**10) + 1000 * 10**10;
             const locked = Math.random() > 0.7 ? Math.floor(Math.random() * 5000 * 10**10) : 0;
             const hasUnbonding = Math.random() > 0.8;
@@ -684,7 +681,7 @@
                 inputAddress.disabled = true;
                 btnMain.disabled = true;
                 btnMain.style.opacity = '0.5';
-                loadDemoData(true); // Запускаем генерацию
+                loadDemoData(true); 
             } else {
                 btnDemo.innerText = "▶ Демо-режим";
                 btnDemo.classList.remove('active');
@@ -694,7 +691,6 @@
                 btnMain.disabled = false;
                 btnMain.style.opacity = '1';
                 document.getElementById('titleText').innerText = 'Адрес Polkadot';
-                // Скрываем все блоки
                 document.querySelectorAll('.card').forEach(c => {
                     if (c.id !== 'addressCard' && c.id !== 'configCard') c.classList.add('hidden');
                 });
@@ -707,7 +703,7 @@
                 const inputAddress = document.getElementById('address');
                 if (isAddressChanged) {
                     inputAddress.value = generateRandomAddress();
-                    generateDemoData(); // Создаем новый набор данных
+                    generateDemoData(); 
                 }
 
                 document.querySelectorAll('.card').forEach(c => c.classList.remove('hidden'));
@@ -732,7 +728,6 @@
                 btnConfig.disabled = true; 
                 btnConfig.innerText = "Идет загрузка...";
                 
-                // Симулируем задержку сети
                 showProgressBar(30);
                 await delay(400);
                 showProgressBar(60);
@@ -769,7 +764,6 @@
                     document.getElementById('chartCard').classList.remove('loading');
                 }
 
-                // Рендерим фейковый стейкинг
                 let html = "";
                 html += `<div class="token-row">Статус: <b>Active (Demo Mode)</b></div>`;
                 html += `<div class="token-row">Застейкано: <b style="color:var(--accent-primary);">${formatAmount(demoStakingData.bonded, DOT_DECIMALS)} DOT</b></div>`;
@@ -787,7 +781,6 @@
                 btnConfig.disabled = false; 
                 btnConfig.innerText = "Рассчитать";
                 
-                // --- ЭПИЧНЫЙ ФИНАЛ ЗАГРУЗКИ ---
                 showProgressBar(100); 
                 await delay(400); 
                 
@@ -812,7 +805,7 @@
         }
 
         // ==========================================
-        // ОСНОВНАЯ ЛОГИКА ЗАГРУЗКИ (Реальные данные)
+        // ОСНОВНАЯ ЛОГИКА ЗАГРУЗКИ
         // ==========================================
 
         async function fetchEvents(baseUrl, addr, chainName, category, maxPages) {
@@ -832,7 +825,6 @@
         }
 
         async function fetchData(isAddressChanged = true) {
-            // Если включен демо-режим, перенаправляем в другую функцию
             if (isDemoMode) {
                 return loadDemoData(isAddressChanged);
             }
@@ -928,7 +920,6 @@
                 btnConfig.disabled = false; 
                 btnConfig.innerText = "Рассчитать";
                 
-                // --- ЭПИЧНЫЙ ФИНАЛ ЗАГРУЗКИ ---
                 showProgressBar(100); 
                 await delay(400); 
                 
@@ -1099,7 +1090,16 @@
             if (group === 'day') return `${y}-${String(m+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             if (group === 'quarter') return `${y}-Q${Math.floor(m / 3) + 1}`;
             if (group === 'halfyear') return `${y}-H${m < 6 ? 1 : 2}`;
-            if (group === 'week') { const onejan = new Date(y, 0, 1); const week = Math.ceil((((d - onejan) / 86400000) + onejan.getDay() + 1) / 7); return `${y}-W${String(week).padStart(2,'0')}`; }
+            // ИСПРАВЛЕНИЕ: Стандарт ISO 8601 (неделя начинается с понедельника)
+            if (group === 'week') {
+                const date = new Date(timestamp * 1000);
+                const dUtc = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+                const dayNum = dUtc.getUTCDay() || 7;
+                dUtc.setUTCDate(dUtc.getUTCDate() + 4 - dayNum);
+                const yearStart = new Date(Date.UTC(dUtc.getUTCFullYear(),0,1));
+                const week = Math.ceil((((dUtc - yearStart) / 86400000) + 1) / 7);
+                return `${dUtc.getUTCFullYear()}-W${String(week).padStart(2,'0')}`;
+            }
             return `${y}-${String(m+1).padStart(2,'0')}`;
         }
 
