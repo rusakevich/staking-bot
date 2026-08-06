@@ -173,8 +173,19 @@
 
         .chart-container { height: 280px; width: 100%; margin-top: 15px; margin-bottom: 25px; position: relative; z-index: 1; overflow: hidden; }
 
-        .chart-toggles { position: absolute; top: 5px; right: 5px; z-index: 10; display: flex; gap: 6px; }
-        .chart-toggle-btn { width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; cursor: pointer; padding: 0; box-shadow: 0 0 3px rgba(0,0,0,0.3); opacity: 1; transition: opacity 0.2s; }
+        /* НОВЫЕ КНОПКИ ПЕРЕКЛЮЧЕНИЯ ГРАФИКОВ (Овальные и крупные) */
+        .chart-toggles { position: absolute; top: 10px; right: 10px; z-index: 10; display: flex; gap: 8px; }
+        .chart-toggle-btn { 
+            width: 44px; 
+            height: 22px; 
+            border-radius: 11px; 
+            border: 2px solid white; 
+            cursor: pointer; 
+            padding: 0; 
+            box-shadow: 0 0 3px rgba(0,0,0,0.3); 
+            opacity: 1; 
+            transition: opacity 0.2s; 
+        }
         .chart-toggle-btn.inactive { opacity: 0.3; }
         
         .error { color: red; font-size: 0.9em; margin-top: 10px; text-align: center; position: relative; z-index: 2; }
@@ -346,7 +357,7 @@
                 <div class="period-label" id="periodLabel"></div>
                 <div class="progress-label" id="progressLabel"></div>
                 <button class="btn-main" style="background:var(--accent-secondary)" onclick="fetchData(false)">Рассчитать</button>
-                <div class="version-tag">v24.0 (Snappy Finish)</div>
+                <div class="version-tag">v25.0 (Chart UI Fix)</div>
             </div>
         </div>
 
@@ -490,7 +501,6 @@
             `;
         }
         
-        // Очень быстрое моргание (3 раза по 200мс = 600мс)
         async function blinkProgressBar(times) {
             const bar = document.querySelector('.progress-bar-bg');
             if (!bar) return;
@@ -508,7 +518,7 @@
             flash.style.left = cx + 'px';
             flash.style.top = cy + 'px';
             document.body.appendChild(flash);
-            setTimeout(() => flash.remove(), 800); // Вспышка гаснет за 800мс
+            setTimeout(() => flash.remove(), 800); 
             
             const colors = ['#E6007A', '#552BBF', '#43AAB4', '#FFFFFF', '#FFD700'];
             
@@ -529,7 +539,7 @@
                 spark.style.width = size + 'px';
                 spark.style.height = size + 'px';
                 
-                spark.style.animationDuration = (1.0 + Math.random() * 1.0) + 's'; // Искры горят до 2х секунд
+                spark.style.animationDuration = (1.0 + Math.random() * 1.0) + 's'; 
                 
                 document.body.appendChild(spark);
                 setTimeout(() => spark.remove(), 2000);
@@ -716,7 +726,7 @@
                     const cy = rect.top + rect.height / 2;
                     
                     triggerFirework(cx, cy);
-                    await blinkProgressBar(3); // Всего 3 быстрых вспышки (0.6 сек)
+                    await blinkProgressBar(3); 
                     
                     barEl.style.opacity = '1';
                 } else {
@@ -939,12 +949,12 @@
                 data: {
                     labels: displayLabels,
                     datasets: [
-                        { type: 'bar', label: 'Чистый доход (DOT)', data: data, backgroundColor: barColor, borderColor: barBorder, borderWidth: 1, borderRadius: 4, yAxisID: 'y', order: 2, hidden: !showBars, datalabels: { display: function(context) { return showBars && (context.dataset.data.length <= 15 || context.dataIndex % Math.ceil(context.dataset.data.length / 15) === 0); }, align: 'top', color: barBorder, font: { weight: 'bold', size: 10 }, formatter: (value) => parseFloat(value.toFixed(2)).toString() } },
-                        { type: 'line', label: 'Средний доход в день (DOT)', data: avgData, borderColor: lineColor, backgroundColor: lineColor, tension: 0.3, fill: false, pointRadius: 5, pointHoverRadius: 7, yAxisID: 'y', order: 1, hidden: !showLine, datalabels: { display: function(context) { return showLine && (context.dataset.data.length <= 15 || context.dataIndex % Math.ceil(context.dataset.data.length / 15) === 0); }, align: 'bottom', color: lineColor, font: { weight: 'bold', size: 10 }, formatter: (value) => parseFloat(value.toFixed(2)).toString() } }
+                        { type: 'bar', label: 'Чистый доход (DOT)', data: data, backgroundColor: barColor, borderColor: barBorder, borderWidth: 1, borderRadius: 4, yAxisID: 'y', order: 2, hidden: !showBars, datalabels: { display: function(context) { return showBars && (context.dataset.data.length <= 15 || context.dataIndex % Math.ceil(context.dataset.data.length / 15) === 0); }, align: 'end', anchor: 'end', color: barBorder, font: { weight: 'bold', size: 10 }, formatter: (value) => parseFloat(value.toFixed(2)).toString() } },
+                        { type: 'line', label: 'Средний доход в день (DOT)', data: avgData, borderColor: lineColor, backgroundColor: lineColor, tension: 0.3, fill: false, pointRadius: 5, pointHoverRadius: 7, yAxisID: 'y', order: 1, hidden: !showLine, datalabels: { display: function(context) { return showLine && (context.dataset.data.length <= 15 || context.dataIndex % Math.ceil(context.dataset.data.length / 15) === 0); }, align: 'bottom', anchor: 'end', color: lineColor, font: { weight: 'bold', size: 10 }, formatter: (value) => parseFloat(value.toFixed(2)).toString() } }
                     ]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false, layout: { padding: { top: 30, bottom: 10 } },
+                    responsive: true, maintainAspectRatio: false, layout: { padding: { top: 40, bottom: 10 } },
                     plugins: { legend: { display: true, position: 'top', labels: { color: axisText, boxWidth: 15, font: { size: 11 } } }, tooltip: { enabled: true } },
                     scales: { y: { beginAtZero: true, ticks: { color: axisText, font: { size: 10 } }, grid: { color: gridColor } }, x: { ticks: { color: axisText, font: { size: 10 } }, grid: { display: false } } }
                 }
