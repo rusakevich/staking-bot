@@ -115,6 +115,12 @@
         
         .btn-main { width: 100%; padding: 12px; background: var(--accent-primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; display: block; margin-bottom: 5px; font-family: var(--font-family); transition: background 0.3s ease; position: relative; z-index: 2; }
         .btn-main:disabled { background: #99ccdd; }
+
+        /* Кнопки демо-режима */
+        .btn-demo { width: 100%; padding: 10px; background: transparent; color: var(--accent-secondary); border: 1px solid var(--accent-secondary); border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; display: block; margin-top: 5px; font-family: var(--font-family); transition: all 0.2s; position: relative; z-index: 2; }
+        .btn-demo:hover { background: var(--accent-secondary); color: white; }
+        .btn-demo.active { background: var(--accent-secondary); color: white; }
+        .btn-new-demo { width: 100%; padding: 10px; background: transparent; color: var(--accent-primary); border: 1px dashed var(--accent-primary); border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; display: none; margin-top: 5px; font-family: var(--font-family); position: relative; z-index: 2; }
         
         .dates-row { width: 100%; font-size: 0; margin-bottom: 15px; position: relative; z-index: 2; }
         .date-col { display: inline-block; vertical-align: top; width: 49%; box-sizing: border-box; }
@@ -173,7 +179,7 @@
 
         .chart-container { height: 280px; width: 100%; margin-top: 15px; margin-bottom: 25px; position: relative; z-index: 1; overflow: hidden; }
 
-        /* НОВЫЕ КНОПКИ ПЕРЕКЛЮЧЕНИЯ ГРАФИКОВ (Овальные и крупные) */
+        /* Кнопки вкл/выкл графиков */
         .chart-toggles { position: absolute; top: 10px; right: 10px; z-index: 10; display: flex; gap: 8px; }
         .chart-toggle-btn { 
             width: 44px; 
@@ -330,6 +336,8 @@
             </h3>
             <input type="text" id="address" placeholder="Вставьте ваш адрес (Polkadot / Asset Hub)">
             <button class="btn-main" onclick="fetchData(true)">Загрузить данные</button>
+            <button class="btn-demo" id="btnDemo" onclick="toggleDemoMode()">▶ Демо-режим</button>
+            <button class="btn-new-demo" id="btnNewDemo" onclick="loadDemoData(true)">🎲 Сгенерировать новый адрес</button>
             <div id="mainError" class="error"></div>
         </div>
 
@@ -357,7 +365,7 @@
                 <div class="period-label" id="periodLabel"></div>
                 <div class="progress-label" id="progressLabel"></div>
                 <button class="btn-main" style="background:var(--accent-secondary)" onclick="fetchData(false)">Рассчитать</button>
-                <div class="version-tag">v25.0 (Chart UI Fix)</div>
+                <div class="version-tag">v26.0 (Demo Mode)</div>
             </div>
         </div>
 
@@ -425,8 +433,12 @@
         let showBars = true;
         let showLine = true;
         let progressSteps = 0;
-        
         let currentTheme = 0; 
+
+        // Переменные для демо-режима
+        let isDemoMode = false;
+        let demoEvents = [];
+        let demoStakingData = null;
 
         const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
 
@@ -607,6 +619,202 @@
             renderHistory();
         }
 
+        // ==========================================
+        // ЛОГИКА ДЕМО-РЕЖИМА
+        // ==========================================
+
+        function generateRandomAddress() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz123456789';
+            let addr = '1';
+            for (let i = 0; i < 47; i++) {
+                addr += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return addr;
+        }
+
+        function generateDemoData() {
+            demoEvents = [];
+            // Генерируем выплаты за последние 2 года (730 дней)
+            let currentTime = Math.floor(Date.now() / 1000);
+            const startTime = currentTime - (730 * 86400);
+            
+            while (currentTime > startTime) {
+                // Прыгаем назад на 1-4 дня (имитация эпох)
+                currentTime -= Math.floor(Math.random() * 3 * 86400) + 86400;
+                
+                const isSlash = Math.random() < 0.05; // 5% шанс слэшинга
+                const amount = isSlash 
+                    ? -(Math.floor(Math.random() * 5 * 10**10) + 1 * 10**10) // Слэш 0.1 - 0.5 DOT
+                    : (Math.floor(Math.random() * 4 * 10**10) + 0.5 * 10**10); // Награда 0.05 - 0.45 DOT
+                
+                const chain = Math.random() > 0.5 ? "Relay" : "Asset Hub";
+                
+                demoEvents.push({
+                    block_timestamp: currentTime,
+                    amount: Math.abs(amount).toString(),
+                    chain: chain,
+                    type: isSlash ? "Slash" : "Reward"
+                });
+            }
+
+            // Генерируем стейкинг
+            const bonded = Math.floor(Math.random() * 50000 * 10**10) + 1000 * 10**10;
+            const locked = Math.random() > 0.7 ? Math.floor(Math.random() * 5000 * 10**10) : 0;
+            const hasUnbonding = Math.random() > 0.8;
+            
+            demoStakingData = {
+                bonded: bonded,
+                locked: locked,
+                identity: "Demo Validator",
+                unbonding: hasUnbonding ? [{ amount: Math.floor(Math.random() * 1000 * 10**10), until: 99999999 }] : []
+            };
+        }
+
+        function toggleDemoMode() {
+            isDemoMode = !isDemoMode;
+            const btnDemo = document.getElementById('btnDemo');
+            const btnNewDemo = document.getElementById('btnNewDemo');
+            const inputAddress = document.getElementById('address');
+            const btnMain = document.querySelector('#addressCard .btn-main');
+
+            if (isDemoMode) {
+                btnDemo.innerText = "⏹ Выйти из демо";
+                btnDemo.classList.add('active');
+                btnNewDemo.style.display = 'block';
+                inputAddress.disabled = true;
+                btnMain.disabled = true;
+                btnMain.style.opacity = '0.5';
+                loadDemoData(true); // Запускаем генерацию
+            } else {
+                btnDemo.innerText = "▶ Демо-режим";
+                btnDemo.classList.remove('active');
+                btnNewDemo.style.display = 'none';
+                inputAddress.disabled = false;
+                inputAddress.value = '';
+                btnMain.disabled = false;
+                btnMain.style.opacity = '1';
+                document.getElementById('titleText').innerText = 'Адрес Polkadot';
+                // Скрываем все блоки
+                document.querySelectorAll('.card').forEach(c => {
+                    if (c.id !== 'addressCard' && c.id !== 'configCard') c.classList.add('hidden');
+                });
+                document.getElementById('configCard').classList.add('hidden');
+            }
+        }
+
+        async function loadDemoData(isAddressChanged) {
+            try {
+                const inputAddress = document.getElementById('address');
+                if (isAddressChanged) {
+                    inputAddress.value = generateRandomAddress();
+                    generateDemoData(); // Создаем новый набор данных
+                }
+
+                document.querySelectorAll('.card').forEach(c => c.classList.remove('hidden'));
+                
+                document.getElementById('addressCard').classList.remove('loading');
+                document.getElementById('configCard').classList.remove('loading');
+                document.getElementById('stakingCard').classList.remove('loading');
+                document.getElementById('incomeCard').classList.remove('loading');
+                document.getElementById('chartCard').classList.remove('loading');
+                document.getElementById('historyCard').classList.remove('loading');
+
+                if (isAddressChanged) {
+                    document.getElementById('addressCard').classList.add('loading');
+                }
+                document.getElementById('configCard').classList.add('loading');
+                document.getElementById('stakingCard').classList.add('loading');
+                document.getElementById('incomeCard').classList.add('loading');
+                document.getElementById('chartCard').classList.add('loading');
+                document.getElementById('historyCard').classList.add('loading');
+                
+                const btnConfig = document.querySelector('#configCard .btn-main');
+                btnConfig.disabled = true; 
+                btnConfig.innerText = "Идет загрузка...";
+                
+                // Симулируем задержку сети
+                showProgressBar(30);
+                await delay(400);
+                showProgressBar(60);
+                await delay(400);
+                showProgressBar(90);
+                await delay(400);
+
+                const startStr = document.getElementById('startDate').value;
+                const endStr = document.getElementById('endDate').value;
+                const fromTs = Math.floor(new Date(startStr + "T00:00:00").getTime() / 1000);
+                const toTs = Math.floor(new Date(endStr + "T23:59:59").getTime() / 1000);
+                
+                allEvents = demoEvents.filter(r => r.block_timestamp >= fromTs && r.block_timestamp <= toTs);
+                allEvents.sort((a, b) => b.block_timestamp - a.block_timestamp);
+                
+                document.getElementById('titleText').innerText = demoStakingData.identity + " (Demo)";
+
+                if (allEvents.length === 0) {
+                    document.getElementById('history').innerHTML = `<span class="error">За этот период выплат не найдено.</span>`;
+                    document.getElementById('income').innerText = "Нет данных";
+                } else {
+                    const minTs = allEvents[allEvents.length - 1].block_timestamp;
+                    const maxTs = allEvents[0].block_timestamp;
+                    document.getElementById('chartStartDate').value = new Date(minTs * 1000).toISOString().split('T')[0];
+                    document.getElementById('chartEndDate').value = new Date(maxTs * 1000).toISOString().split('T')[0];
+
+                    renderIncome();
+                    document.getElementById('incomeCard').classList.remove('loading');
+                    
+                    renderHistory();
+                    document.getElementById('historyCard').classList.remove('loading');
+                    
+                    updateChartRange();
+                    document.getElementById('chartCard').classList.remove('loading');
+                }
+
+                // Рендерим фейковый стейкинг
+                let html = "";
+                html += `<div class="token-row">Статус: <b>Active (Demo Mode)</b></div>`;
+                html += `<div class="token-row">Застейкано: <b style="color:var(--accent-primary);">${formatAmount(demoStakingData.bonded, DOT_DECIMALS)} DOT</b></div>`;
+                if (demoStakingData.locked > 0) html += `<div class="token-row">Заблокировано: <b>${formatAmount(demoStakingData.locked, DOT_DECIMALS)} DOT</b></div>`;
+                if (demoStakingData.unbonding.length > 0) {
+                    html += `<div class="token-row" style="margin-top:10px; border-top:1px solid var(--border-color); padding-top:10px;"><b>⏳ В выводе (Unbonding):</b></div>`;
+                    html += `<div class="token-row">• <b>${formatAmount(demoStakingData.unbonding[0].amount, DOT_DECIMALS)} DOT</b> (осталось ~28 дн.)</div>`;
+                }
+                document.getElementById('stakingSummary').innerHTML = html;
+                
+                document.getElementById('stakingCard').classList.remove('loading');
+                document.getElementById('addressCard').classList.remove('loading');
+                document.getElementById('configCard').classList.remove('loading');
+                
+                btnConfig.disabled = false; 
+                btnConfig.innerText = "Рассчитать";
+                
+                // --- ЭПИЧНЫЙ ФИНАЛ ЗАГРУЗКИ ---
+                showProgressBar(100); 
+                await delay(400); 
+                
+                const barEl = document.querySelector('.progress-bar-bg');
+                if (barEl) {
+                    const rect = barEl.getBoundingClientRect();
+                    const cx = rect.left + rect.width / 2;
+                    const cy = rect.top + rect.height / 2;
+                    
+                    triggerFirework(cx, cy);
+                    await blinkProgressBar(3); 
+                    
+                    barEl.style.opacity = '1';
+                }
+
+            } catch (err) { 
+                console.error(err); 
+                showProgress("Ошибка"); 
+                showError("Ошибка демо-режима: " + err.message); 
+                document.querySelectorAll('.card').forEach(c => c.classList.remove('loading'));
+            }
+        }
+
+        // ==========================================
+        // ОСНОВНАЯ ЛОГИКА ЗАГРУЗКИ (Реальные данные)
+        // ==========================================
+
         async function fetchEvents(baseUrl, addr, chainName, category, maxPages) {
             let events = []; let page = 0;
             while (page < maxPages) {
@@ -624,6 +832,11 @@
         }
 
         async function fetchData(isAddressChanged = true) {
+            // Если включен демо-режим, перенаправляем в другую функцию
+            if (isDemoMode) {
+                return loadDemoData(isAddressChanged);
+            }
+
             try {
                 showError(""); 
                 const addr = document.getElementById('address').value.trim();
@@ -715,7 +928,7 @@
                 btnConfig.disabled = false; 
                 btnConfig.innerText = "Рассчитать";
                 
-                // --- ЭПИЧНЫЙ ФИНАЛ ЗАГРУЗКИ (СИНХРОНИЗАЦИЯ) ---
+                // --- ЭПИЧНЫЙ ФИНАЛ ЗАГРУЗКИ ---
                 showProgressBar(100); 
                 await delay(400); 
                 
@@ -729,10 +942,7 @@
                     await blinkProgressBar(3); 
                     
                     barEl.style.opacity = '1';
-                } else {
-                    await delay(600);
                 }
-                // ---------------------
 
             } catch (err) { 
                 console.error(err); showProgress("Ошибка"); showError("Критическая ошибка: " + err.message); 
